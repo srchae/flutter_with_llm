@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_begin/chat_page.dart';
 import 'package:flutter_begin/widgets/appbar/appbar.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: '.env');
+  Gemini.init(apiKey: dotenv.env['GEMINI_API_KEY'] ?? "");
   runApp(const MyApp());
 }
 
@@ -12,10 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        // home: DefaultTabController(length: 3, child: MyHomePage())
-        home: const ChatPage());
+        debugShowCheckedModeBanner: false, home: const ChatPage());
   }
 }
 
@@ -46,17 +47,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: Container(
-      // width: 300,
-      // height: 300,
-      // decoration: BoxDecoration(
-      //   border: Border.all(color: Colors.black, width: 2),
-      // ),
       child: Stack(
-        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // const Text('Hello world'),
-          // const Icon(Icons.abc),
-          // const MyElevatedButton(),
           Positioned(
               bottom: 0,
               right: 0,
