@@ -1,7 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_begin/widgets/ai_message.dart';
+import 'package:flutter_begin/widgets/human_message.dart';
+import 'package:flutter_begin/widgets/input_message.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:flutter_svg/svg.dart';
 
-class ChatPage extends StatelessWidget {
+class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
+
+  @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  final chatController = TextEditingController();
+  final gemini = Gemini.instance;
+  List<Content> chatList = [];
+
+  void handleNewChat(String newChat) async {
+    setState(() {
+      chatList = [
+        ...chatList,
+        Content(
+          role: 'user',
+          parts: [Part.text(newChat)],
+        )
+      ];
+    });
+    chatController.clear();
+    final aiResponse = await gemini.chat(chatList);
+    // debugPrint('aiResponse : ${aiResponse?.output}');
+    setState(() {
+      chatList = [
+        ...chatList,
+        Content(
+          role: 'assistant',
+          parts: [Part.text(aiResponse?.output ?? '')],
+        )
+      ];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,66 +57,37 @@ class ChatPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Expanded(
+                child: ListView.separated(
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                final part = chatList[index].parts?.first;
+                final messageText = part is TextPart ? part.text : '';
+
+                return chatList[index].role == 'assistant'
+                    ? AiMessage(message: messageText)
+                    : HumanMessage(message: messageText);
+              },
+              separatorBuilder: (context, index) => const SizedBox(height: 24),
+              itemCount: chatList.length,
+            )),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset('assets/images/ai.png'),
+                InputMessage(
+                  onSubmit: handleNewChat,
+                  controller: chatController,
+                ),
                 SizedBox(width: 16),
-                // Extract Widget
-                ChatMessage(
-                  isHuman: false,
-                  message:
-                      'Really love your most recent photo. I’ve been trying to capture the same thing for a few months and would love some tips!',
-                )
-              ],
-            ),
-            SizedBox(
-              height: 24,
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ChatMessage(
-                    message:
-                        'A fast 50mm like f1.8 would help with the bokeh. I’ve been using primes as they tend to get a bit sharper images.',
-                    isHuman: true),
-                SizedBox(width: 16),
-                Image.asset('assets/images/human.png'),
+                IconButton(
+                    onPressed: () {
+                      handleNewChat(chatController.text);
+                    },
+                    icon: SvgPicture.asset('assets/icons/send-chat.svg'))
               ],
             )
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class ChatMessage extends StatelessWidget {
-  final String message;
-  final bool isHuman;
-  const ChatMessage({super.key, required this.message, required this.isHuman});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.03),
-            borderRadius: BorderRadius.only(
-              topLeft: !isHuman ? Radius.zero : Radius.circular(6),
-              topRight: !isHuman ? Radius.zero : Radius.circular(6),
-              bottomLeft: Radius.circular(6),
-              bottomRight: Radius.circular(6),
-            )),
-        child: Text(
-          message,
-          style: TextStyle(
-            fontSize: 13,
-            height: 18 / 13,
-            fontWeight: FontWeight.normal,
-          ),
         ),
       ),
     );
